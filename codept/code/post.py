@@ -86,25 +86,31 @@ def baixar_conteudo(url):
             title_tag = soup.find("h1", class_="post__title")
             if title_tag:
                 title = " ".join([span.text for span in title_tag.find_all("span")])
-                f.write(f"Título: {title}\n\n")
+                f.write(f"Título: {title}\n")
 
             # Data de publicação
             published_tag = soup.find("div", class_="post__published")
             if published_tag:
                 published_date = published_tag.text.strip().split(": ")[1]
-                f.write(f"Data de publicação: {published_date}\n\n")
+                f.write(f"Data de publicação: {published_date}\n")
 
             # Data de importação
             imported_tag = soup.find("div", class_="post__added")
             if imported_tag and ": " in imported_tag.text:
                 imported_date = imported_tag.text.strip().split(": ")[1]
-                f.write(f"Data de importação: {imported_date}\n\n")
+                f.write(f"Data de importação: {imported_date}\n")
+
+            f.write("\n\n")  # Adiciona uma quebra de linha após os anexos
 
             # Conteúdo do post
             content_section = soup.find("div", class_="post__content")
             if content_section:
-                content = content_section.get_text(strip=True)
-                f.write(f"Conteúdo:\n{content}\n\n")
+                paragraphs = content_section.find_all("p")
+                f.write("Conteúdo:\n")
+                for paragraph in paragraphs:
+                    content = paragraph.get_text(strip=True)
+                    f.write(f"{content}\n")
+                f.write("\n")
 
             # Tags
             tags_section = soup.find("section", id="post-tags")
@@ -128,7 +134,7 @@ def baixar_conteudo(url):
                         browse_response = requests.get(browse_url)
                         browse_soup = BeautifulSoup(browse_response.text, "html.parser")
 
-            f.write("\n")  # Adiciona uma quebra de linha após os anexos
+            f.write("\n\n")  # Adiciona uma quebra de linha após os anexos
 
             # Comentários
             if salvar_comentarios_txt:
@@ -183,6 +189,9 @@ def baixar_conteudo(url):
                 attachment_response = requests.get(attachment_url)
                 # Obtendo o nome do arquivo
                 filename = attachment_tag["download"]
+                # Substituir %20 por espaço no nome do arquivo
+                filename = filename.replace("%20", " ")
+                print(f"Salvando anexo {filename}...")
                 # Salvando o anexo na pasta do post
                 with open(os.path.join(post_path, filename), "wb") as f:
                     f.write(attachment_response.content)

@@ -50,12 +50,13 @@ def salvar_info_post(soup, folder, salvar_comentarios_txt):
         title_tag = soup.find("h1", class_="post__title")
         if title_tag:
             title = " ".join([span.text for span in title_tag.find_all("span")])
-            f.write(f"Título: {title}\n\n")
+            print(f"Baixando post: {title}")
+            f.write(f"Título: {title}\n")
 
         published_tag = soup.find("div", class_="post__published")
         if published_tag:
             published_date = published_tag.text.strip().split(": ")[1]
-            f.write(f"Data de publicação: {published_date}\n\n")
+            f.write(f"Data de publicação: {published_date}\n")
 
         imported_tag = soup.find("div", class_="post__added")
         if imported_tag and ": " in imported_tag.text:
@@ -65,7 +66,7 @@ def salvar_info_post(soup, folder, salvar_comentarios_txt):
         tags_section = soup.find("section", id="post-tags")
         if tags_section:
             tags = [a.text for a in tags_section.find_all("a")]
-            f.write(f"Tags: {', '.join(tags)}\n\n")
+            f.write(f"Tags: {', '.join(tags)}\n")
 
         attachment_tags = soup.find_all("a", class_="post__attachment-link")
         if attachment_tags:
@@ -79,12 +80,23 @@ def salvar_info_post(soup, folder, salvar_comentarios_txt):
                     browse_url = urlparse(url)._replace(path=browse_tag["href"]).geturl()
                     f.write(f"  Conteúdo do anexo: {browse_url}\n")
 
+        f.write("\n\n")  # Adiciona uma quebra de linha após os anexos
+
         content_div = soup.find("div", class_="post__content")
         if content_div:
             content_pre = content_div.find("pre")
             if content_pre:
                 content_text = content_pre.text.strip()
                 f.write(f"\nConteúdo do Post:\n{content_text}\n\n")
+
+        content_section = soup.find("div", class_="post__content")
+        if content_section:
+            paragraphs = content_section.find_all("p")
+            f.write("Conteúdo:\n")
+            for paragraph in paragraphs:
+                content = paragraph.get_text(strip=True)
+                f.write(f"{content}\n")
+            f.write("\n")
 
         if salvar_comentarios_txt:
             comments_section = soup.find("footer", class_="post__footer")
@@ -114,7 +126,8 @@ def baixar_conteudo(url, config):
     author_folder = f"{author_name}-{platform_name}"
 
     post_id = soup.find("meta", attrs={"name": "id"})["content"]
-    post_folder = post_id
+    post_title = soup.find("h1", class_="post__title").find("span").text.strip()
+    post_folder = f"{post_id}-{post_title}"
     post_path = os.path.join(base_folder, author_folder, "posts", post_folder)
     os.makedirs(post_path, exist_ok=True)
 
